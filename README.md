@@ -38,9 +38,13 @@ ln -s "$(pwd)/xreview" ~/.claude/skills/xreview
 
 在有未提交變更的 git repo 裡，於 Claude Code 輸入：
 
-```
-/xreview
-```
+| 指令 | 使用的 reviewer |
+|---|---|
+| `/xreview` | Codex 和 agy 都用（預設） |
+| `/xreview codex` | 只用 Codex |
+| `/xreview agy` | 只用 agy |
+
+只用一個 reviewer 會比較快、也比較省額度，但就沒有交叉檢查；報告會標明這次只用了哪一個。第二輪會沿用第一輪選的 reviewer。
 
 這個 skill 設定成**只能手動觸發**（`disable-model-invocation: true`），Claude 不會自己啟動它，避免在你沒注意時消耗額度。
 
