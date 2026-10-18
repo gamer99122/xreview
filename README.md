@@ -1,6 +1,6 @@
 # xreview
 
-Claude Code 的跨模型 code review skill。Claude 負責寫程式，再把未提交的變更交給 **Codex** 和 **agy（Gemini）** 兩個不同模型做唯讀 review。Claude 會把兩邊的意見合併，對照實際程式碼逐條判斷，列給你確認，你同意的項目才修改。
+Claude Code 的跨模型 code review skill。Claude 負責寫程式，再把未提交的變更交給 **Codex** 和 **agy（Gemini）** 兩個不同模型做唯讀 review，也可以只選其中一個。Claude 會把 reviewer 的意見合併，對照實際程式碼逐條判斷，列給你確認，你同意的項目才修改。
 
 不用在多個終端機之間切換，也不用手動搬運 review 結果。
 
@@ -9,7 +9,7 @@ Claude Code 的跨模型 code review skill。Claude 負責寫程式，再把未�
 ```
 /xreview
   1. prepare   收集未提交的變更（staged + unstaged + untracked）
-  2. review    Codex 和 agy 在背景平行執行，只讀不寫
+  2. review    選定的 reviewer 在背景平行執行，只讀不寫（預設 Codex + agy）
   3. verify    確認 review 期間沒有任何檔案被改動
   4. 判斷      Claude 逐條標註「同意／不同意＋理由」
   5. 修改      只修改你同意的項目；最多來回兩輪
@@ -48,6 +48,23 @@ ln -s "$(pwd)/xreview" ~/.claude/skills/xreview
 
 這個 skill 設定成**只能手動觸發**（`disable-model-invocation: true`），Claude 不會自己啟動它，避免在你沒注意時消耗額度。
 
+### 報告範例
+
+```
+## 跨模型 Review（第 1 輪）
+Reviewer：Codex + agy
+範圍：未提交的變更，共 1 個檔案
+
+| # | 嚴重度 | 位置      | 問題                                 | 提出者 | 判斷                       |
+|---|--------|-----------|--------------------------------------|--------|----------------------------|
+| 1 | 高     | calc.py:3 | 迴圈從 index 1 開始，漏掉第一個元素   | 兩者   | ✅ 同意                     |
+| 2 | 中     | calc.py:5 | 空 list 會除以零                      | agy    | ❌ 不同意：原本就有，不是這次的變更造成 |
+
+要修哪幾條？（例如「修 1」或「全部同意的都修」）
+```
+
+Claude 會先打開實際程式碼確認，才給出同意或不同意。你回覆要修哪幾條之後，它才會動手修改。
+
 ## Reviewer 模型
 
 模型寫死在 `xreview.sh` 開頭，不依賴各 CLI 的預設值：
@@ -70,7 +87,7 @@ ln -s "$(pwd)/xreview" ~/.claude/skills/xreview
 ## 失敗處理
 
 - **執行失敗不等於 review 通過。** 失敗的 reviewer 會在報告開頭標示「⚠️ 未執行」和原因。
-- 兩個都失敗時，Claude 會停下來，不進入修改步驟。
+- 選定的 reviewer 全部失敗時（只選一個時，就是那一個失敗），Claude 會停下來，不進入修改步驟。
 - 不自動重試，也不會改用付費 API key。
 
 ## 已知限制
@@ -98,3 +115,4 @@ bash xreview.sh verify <OUT>
 | `SKILL.md` | 給 Claude 看的流程說明 |
 | `xreview.sh` | 輔助腳本 |
 | `cross-review-plan.md` | 設計決策、實測紀錄、待辦清單 |
+| `README.md` | 本文件 |
